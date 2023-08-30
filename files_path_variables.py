@@ -16,8 +16,11 @@ path_to_rules_file = Path(corr_dir, "rules_for_values.csv")
 #Load all uncorrected text
 all_cleaned_text_files = list(splitted_data_folder.glob("*.json"))
 
-#Load all the corrected text
+#Load all automatically the corrected text
 all_cleaned_corr_text_files = list(corrected_data_folder.glob("*.json"))
+
+#Load all manually the corrected text
+all_cleaned_manually_text_files = list(manually_corrected_data_folder.glob("*.json"))
 
 # Load corrections
 all_corrections_file = Path(corr_dir, "homogenize.corr")

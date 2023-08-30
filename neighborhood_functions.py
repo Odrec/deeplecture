@@ -1,7 +1,7 @@
 #Functions for neighborhoods
 
 from files_path_variables import neighborhoods_dir
-from files_path_variables import all_cleaned_corr_text_files
+from files_path_variables import all_cleaned_corr_text_files, all_cleaned_manually_text_files
 
 from useful_functions import load_dicts_from_file, paint_term, save_dicts_to_file
 
@@ -81,35 +81,45 @@ def find_neighborhoods(text_data, term=None, indexes_original=-1, \
     
     return neighborhoods_list, indexes, start, finish
 
-def search_save_neighborhoods(term_to_search, size_of_neighborhoods=NEIGHBORHOOD_SIZE):
+def search_save_neighborhoods(term_to_search, size=NEIGHBORHOOD_SIZE, databases=[all_cleaned_manually_text_files, all_cleaned_corr_text_files]):
     #Start variables to store all data
     start_indexes_dictionary = {}
     finish_indexes_dictionary = {}
     indexes_term_dictionary = {}
     neighborhoods_dictionary = {}
     number_of_neighborhoods = 0
+
+    #Control which documents have been processed
+    processed_documents = []
+
+    #Sometimes we want to search for neighborhoods from different sources (where a source is more "clean" than another for example)
+    #Always set the "cleaner" database in the first element of the databases list
+    for i,d in enumerate(databases):
+
+        #Loop over all cleaned and corrected files
+        for file in d:
+            
+            #Open a file and extract its content
+            with open(file) as json_file:
+                text_data = json.loads(json_file.read())
     
-    #Loop over all cleaned and corrected files
-    for file in all_cleaned_corr_text_files:
+            for document in text_data.keys():
 
-        #Open a file and extract its content
-        with open(file) as json_file:
-            text_data = json.loads(json_file.read())
-
-        for document in text_data.keys():
-            if term_to_search in set(text_data[document]):
-
-                #print(f"\nFound the term {term_to_search} in document {document}.")
-                neighborhoods_list, indexes, start, finish = find_neighborhoods(text_data[document], term=term_to_search, size=size_of_neighborhoods)
-
-                #Fill in the variables with the data
-                neighborhoods_dictionary[document] = neighborhoods_list
-                indexes_term_dictionary[document] = indexes
-                number_of_neighborhoods += len(neighborhoods_list)
-
-                #Create a list of lists of start and finish indexes for each neighborhood
-                start_indexes_dictionary[document] = start
-                finish_indexes_dictionary[document] = finish
+                if document not in processed_documents:
+                    if term_to_search in set(text_data[document]):
+                    
+                        neighborhoods_list, indexes, start, finish = find_neighborhoods(text_data[document], term=term_to_search, size=size)
+        
+                        #Fill in the variables with the data
+                        neighborhoods_dictionary[document] = neighborhoods_list
+                        indexes_term_dictionary[document] = indexes
+                        number_of_neighborhoods += len(neighborhoods_list)
+        
+                        #Create a list of lists of start and finish indexes for each neighborhood
+                        start_indexes_dictionary[document] = start
+                        finish_indexes_dictionary[document] = finish
+    
+                        processed_documents.append(document)
 
 
     print(f"\nFound {number_of_neighborhoods} of the term {term_to_search} in the text data.")
