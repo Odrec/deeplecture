@@ -35,10 +35,6 @@ def paint_term(utterances, term=None, index=-1, color='red'):
 def remove_paint(text):
     return re.sub(r'<.*?>', '', text)
 
-
-
-
-
 #Function to get a list of neighborhoods based on a term
 def get_neighborhoods_list(text_data, term, indexes, size=NEIGHBORHOOD_SIZE):
     neighborhoods_list = []
@@ -190,3 +186,40 @@ def search_neighborhoods(document_to_search, term_to_search, size_of_neighborhoo
     new_corrected_neighborhoods_list = corrected_neighborhoods_list
 
     return original_neighborhoods_list, corrected_neighborhoods_list, start_indexes, text_data
+
+def split_metadata_period(metadata_list):
+    choices = set()
+    for data in metadata_list:
+        if isinstance(data, str):
+            if '|' in data:
+                choices.update(data.split('|'))
+            else:
+                choices.add(data)
+    return sorted(choices)
+
+def split_metadata_entity(metadata_list):
+    choices = {}
+    for data in metadata_list:
+        if isinstance(data, str):
+            if '|' in data:
+                data_parts = data.split('|')
+                if data_parts[0] not in choices:
+                    choices[data_parts[0]] = set()
+                choices[data_parts[0]].update(data_parts[1:])
+            else:
+                if data not in choices.keys():
+                    choices[data] = set()
+    return choices
+
+def split_metadata_nationality(metadata_list):
+    choices = {'europeo': set(), 'americano': set()}
+    for data in metadata_list:
+        if isinstance(data, str):
+            if '|' in data:
+                data_parts = data.split('|')
+                for p in data_parts:
+                    if p == 'americano' or p == 'europeo':
+                        main_nationality = p
+                    elif p != 'varios':
+                        choices[main_nationality].add(p.strip())
+    return choices

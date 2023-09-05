@@ -52,6 +52,7 @@ def get_pdf_page(pdf_path, start_index, width=IMAGE_WIDTH, height=IMAGE_HEIGHT):
             #Store page before if it exists
             if i != 0: 
                 page_before = doc.load_page(i-1)
+                print("PB i",page_before,total_of_pages)
                 
                 #Make sure the page exists before creating the image
                 if page_before:
@@ -60,6 +61,7 @@ def get_pdf_page(pdf_path, start_index, width=IMAGE_WIDTH, height=IMAGE_HEIGHT):
             #Store page after if it exists
             if i < total_of_pages-1: 
                 page_next = doc.load_page(i+1)
+                print("PN i",page_next)
                 
                 #Make sure the page exists before creating the image
                 if page_next:
