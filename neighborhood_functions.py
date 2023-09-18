@@ -9,7 +9,7 @@ from global_variables import NEIGHBORHOOD_SIZE
 
 from pathlib import Path
 
-import json
+import json, pdb
 
 #Find the index or indexes of a term in a text
 def find_indexes(text_data, term):
@@ -42,25 +42,29 @@ def find_closest_indexes(index_original_list, index_target_list):
 def get_neighborhoods_list(text_data, term, indexes, size=NEIGHBORHOOD_SIZE, paint=False):
     neighborhoods_list = []
     start_indexes_list = []
-    finish_indexes_list = []
+    end_indexes_list = []
 
     for a,index in enumerate(indexes):
         if index != -1:
-            #Calculate the start and finish indexes for this neighborhood
+            #Calculate the start and end indexes for this neighborhood
+
             start = max(0, index - size)
-            finish = index + len(term) + size
+            #adds 1 for the term
+            end = index + 1 + size
             start_indexes_list.append(start)
-            finish_indexes_list.append(finish)
+            end_indexes_list.append(end)
             
-            #Painting the term
-            utterances = text_data[start:finish]
+            #Getting the neighborhood
+            utterances = text_data[start:end]
+
+            #Painting the term if required
             if paint:
                 utterances = paint_term(utterances, term)
             
             #Store neighborhood on list
             neighborhood = " ".join(utterances)
             neighborhoods_list.append(neighborhood)
-    return neighborhoods_list, start_indexes_list, finish_indexes_list
+    return neighborhoods_list, start_indexes_list, end_indexes_list
 
 #Find the neighborhood of a term
 def find_neighborhoods(text_data, term=None, indexes_original=-1, \
@@ -77,14 +81,14 @@ def find_neighborhoods(text_data, term=None, indexes_original=-1, \
     if search_close_to_index and len(indexes) != len(indexes_original):
         indexes = find_closest_indexes(indexes_original, indexes)
         
-    neighborhoods_list, start, finish = get_neighborhoods_list(text_data, term, indexes, size)
+    neighborhoods_list, start, end = get_neighborhoods_list(text_data, term, indexes, size)
     
-    return neighborhoods_list, indexes, start, finish
+    return neighborhoods_list, indexes, start, end
 
 def search_save_neighborhoods(term_to_search, size=NEIGHBORHOOD_SIZE, databases=[all_cleaned_manually_text_files, all_cleaned_corr_text_files]):
     #Start variables to store all data
     start_indexes_dictionary = {}
-    finish_indexes_dictionary = {}
+    end_indexes_dictionary = {}
     indexes_term_dictionary = {}
     neighborhoods_dictionary = {}
     number_of_neighborhoods = 0
@@ -94,7 +98,7 @@ def search_save_neighborhoods(term_to_search, size=NEIGHBORHOOD_SIZE, databases=
 
     #Sometimes we want to search for neighborhoods from different sources (where a source is more "clean" than another for example)
     #Always set the "cleaner" database in the first element of the databases list
-    for i,d in enumerate(databases):
+    for d in databases:
 
         #Loop over all cleaned and corrected files
         for file in d:
@@ -108,7 +112,7 @@ def search_save_neighborhoods(term_to_search, size=NEIGHBORHOOD_SIZE, databases=
                 if document not in processed_documents:
                     if term_to_search in set(text_data[document]):
                     
-                        neighborhoods_list, indexes, start, finish = find_neighborhoods(text_data[document], term=term_to_search, size=size)
+                        neighborhoods_list, indexes, start, end = find_neighborhoods(text_data[document], term=term_to_search, size=size)
         
                         #Fill in the variables with the data
                         neighborhoods_dictionary[document] = neighborhoods_list
@@ -117,7 +121,7 @@ def search_save_neighborhoods(term_to_search, size=NEIGHBORHOOD_SIZE, databases=
         
                         #Create a list of lists of start and finish indexes for each neighborhood
                         start_indexes_dictionary[document] = start
-                        finish_indexes_dictionary[document] = finish
+                        end_indexes_dictionary[document] = end
     
                         processed_documents.append(document)
 
@@ -129,7 +133,7 @@ def search_save_neighborhoods(term_to_search, size=NEIGHBORHOOD_SIZE, databases=
     if save == "yes" or save == "y":
 
         #Collect all dictionaries in a file
-        dicts = [neighborhoods_dictionary, indexes_term_dictionary, start_indexes_dictionary, finish_indexes_dictionary]
+        dicts = [neighborhoods_dictionary, indexes_term_dictionary, start_indexes_dictionary, end_indexes_dictionary]
         
         #name the file with the length of neighborhoods and the term
         filename = Path(neighborhoods_dir,f"neighborhoods-{term_to_search}-{NEIGHBORHOOD_SIZE}.pkl")
@@ -142,7 +146,7 @@ def search_save_neighborhoods(term_to_search, size=NEIGHBORHOOD_SIZE, databases=
     else:
         print(f"\nThe neighborhoods were not saved.")
 
-    return neighborhoods_dictionary, indexes_term_dictionary, start_indexes_dictionary, finish_indexes_dictionary
+    return neighborhoods_dictionary, indexes_term_dictionary, start_indexes_dictionary, end_indexes_dictionary
 
 def load_neighborhoods():
 
@@ -167,7 +171,7 @@ def load_neighborhoods():
         #Get the length of neighborhoods
         length_of_neighborhoods = name_of_file_splitted[2]
         
-        #Check if the term already exists on the dict, if it doesn't add to dict and start list
+        #Check if the term already exists on the dict, if it doesn't add to dict and initializes list
         if term not in files_info_dict.keys():
             files_info_dict[term] = []
             
@@ -212,13 +216,13 @@ def load_neighborhoods():
             neighborhoods_dictionary = dictionaries[0][0]
             indexes_term_dictionary = dictionaries[0][1]
             start_indexes_dictionary = dictionaries[0][2]
-            finish_indexes_dictionary = dictionaries[0][2]
+            end_indexes_dictionary = dictionaries[0][3]
             
             #Set variables for other cells
             term_to_search = term_of_neighborhoods
             NEIGHBORHOOD_SIZE = int(length_of_neighborhoods)
                     
-            return neighborhoods_dictionary, indexes_term_dictionary, start_indexes_dictionary, finish_indexes_dictionary, length_of_neighborhoods, term_to_search
+            return neighborhoods_dictionary, indexes_term_dictionary, start_indexes_dictionary, end_indexes_dictionary, length_of_neighborhoods, term_to_search
             
         else:
             print(f"\nThere are no files available for neighborhoods of the term {term_of_neighborhoods} with length {length_of_neighborhoods}.")
