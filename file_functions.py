@@ -27,9 +27,9 @@ def insert_neighborhoods_into_files(neighborhoods_dict, start_indexes_dict, end_
             #Loop the documents in the file
             for document in text_data.keys():
     
-                #Check the document hasn't already been processed
-                if document not in processed_documents:
-    
+                #Check the document hasn't already been processed and that it has neighborhoods to check for
+                if document not in processed_documents and document in neighborhoods_documents_list:
+
                     #Go through all the neighborhoods in the document
                     for n, neighborhood in enumerate(neighborhoods_dict[document]):
     
@@ -50,11 +50,11 @@ def insert_neighborhoods_into_files(neighborhoods_dict, start_indexes_dict, end_
     
                             print(f"Replacing neighborhood number {n} of document {document}. Number of processed documents: {len(document)}")
                             number_of_saved_neighborhoods += 1
-                            print(f"Saving neighborhood number {number_of_saved_neighborhoods}")
+                            print(f"Total number of changed neighborhoods: {number_of_saved_neighborhoods}")
     
                             #Replace neighborhood in the text data
-                            print("NEW",extracted_neighborhood)
-                            print("OLD",original_neighborhood)
+                            #print("NEW",extracted_neighborhood)
+                            #print("\nOLD",original_neighborhood)
                             text_data[document][n] = text_data[document][:start_index] + extracted_neighborhood + text_data[document][end_index+1:]
     
                         #Add the document as processed
@@ -73,6 +73,8 @@ def insert_neighborhoods_into_files(neighborhoods_dict, start_indexes_dict, end_
                     
                     with open(file_path, "w") as json_file:
                         json.dump(text_data, json_file)
+
+                    print(f"FIle {file_path} saved succesfully!")
 
     return text_data
 
