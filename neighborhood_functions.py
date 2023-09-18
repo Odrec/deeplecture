@@ -47,7 +47,6 @@ def get_neighborhoods_list(text_data, term, indexes, size=NEIGHBORHOOD_SIZE, pai
     for a,index in enumerate(indexes):
         if index != -1:
             #Calculate the start and end indexes for this neighborhood
-
             start = max(0, index - size)
             #adds 1 for the term
             end = index + 1 + size
