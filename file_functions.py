@@ -1,6 +1,6 @@
 from useful_functions import tokenize
 from files_path_variables import all_cleaned_manually_text_files, all_cleaned_corr_text_files
-import json, pdb
+import json, pdb, re
 from pathlib import Path
 
 def insert_neighborhoods_into_files(neighborhoods_dict, start_indexes_dict, end_indexes_dict, databases=[all_cleaned_manually_text_files, all_cleaned_corr_text_files]):
@@ -23,7 +23,7 @@ def insert_neighborhoods_into_files(neighborhoods_dict, start_indexes_dict, end_
     for d in databases:
 
         for file in d:
-            
+
             #Open a file and extract its content
             with open(file) as json_file:
                 text_data = json.loads(json_file.read())
@@ -91,32 +91,18 @@ def insert_neighborhoods_into_files(neighborhoods_dict, start_indexes_dict, end_
 
 
 # Create a function to check and modify strings
-def check_and_modify_string(input_string):
-    if target_term in input_string:
-        # Split the string at the target term
-        modified_string = input_string.replace(target_term, f"{target_term} ")
-        return modified_string
-    return input_string
+def check_and_modify_string(input_string, term):
 
-def process_file():
-    modified = False  # Flag to track if any modification was made in this file
+    # Define the regular expression to look for in the string with word boundaries
+    pattern = re.compile(r'\b' + re.escape(term) + r'\b', re.IGNORECASE)
 
-    # Iterate over dictionaries
-    if isinstance(text, list):
-        # Iterate over lists
-        for i, item in enumerate(text):
-            modified_item = check_and_modify_string(item)
-            if modified_item != item:
-                value[i] = modified_item
-                modified = True
+    # Use re.sub to replace the matched term with spaces around it
+    modified_str = pattern.sub(' ' + term + ' ', input_string)
 
-    # Save the modified dictionary back to the file if any modification was made
-    if modified:
-        with open(file, 'w') as json_file:
-            json.dump(data, json_file, indent=4)
-        modified_files.append(json_filename)
-        modified = False
-        print(f"\nFile {file} modified succesfully!")
+    # Remove extra spaces that may have been added by the previous operation
+    modified_str = ' '.join(modified_str.split())
+
+    return modified_str
 
 #Separates the term inside each word if it exists
 #For example if the term to look for is naturaleza and it finds the word "grandenaturaleza" in one of the words 
@@ -124,10 +110,14 @@ def process_file():
 def separate_term(term, databases=[all_cleaned_manually_text_files, all_cleaned_corr_text_files]):
 
     # Define compiled regex pattern
-    pattern = re.compile(r'\b'+term+'\b', re.IGNORECASE)
+    #pattern = re.compile(r'\b'+term+'\b', re.IGNORECASE)
 
     #Control which documents have been processed and how many neighborhoods
     processed_documents = []
+
+    #Control which files and documents were modified
+    modified_files = []
+    modified_documents = []
 
     #Maybe define it as set in case a document is repeated but check first to see if there are repeated cases
     processed_files = []
@@ -138,7 +128,10 @@ def separate_term(term, databases=[all_cleaned_manually_text_files, all_cleaned_
     for d in databases:
 
         for file in d:
-            
+
+            modified = False  # Flag to track if any modification was made in this file
+
+            print(f"Processing file {file.name} in directory {file.parent.name}.")
             #Open a file and extract its content
             with open(file) as json_file:
                 text_data = json.loads(json_file.read())
@@ -149,33 +142,31 @@ def separate_term(term, databases=[all_cleaned_manually_text_files, all_cleaned_
                 #Check the document hasn't already been processed and that it has neighborhoods to check for
                 if document not in processed_documents:
 
-                    modified = False  # Flag to track if any modification was made in this file
-
-                    # Iterate over dictionaries
                     if isinstance(text, list):
                         # Iterate over lists
                         for i, item in enumerate(text):
-                            modified_item = check_and_modify_string(item)
+                            modified_item = check_and_modify_string(item, term)
                             if modified_item != item:
-                                value[i] = modified_item
+                                text[i] = modified_item
                                 modified = True
+                                modified_documents.append(document)
+
                 processed_documents.append(document)
 
-                
             # Save the modified dictionary back to the file if any modification was made
             if modified:
                 with open(file, 'w') as json_file:
-                    json.dump(data, json_file, indent=4)
-                modified_files.append(json_filename)
+                    json.dump(text_data, json_file)
+                modified_files.append(file)
                 modified = False
-                print(f"\nFile {file} modified succesfully!")
+
             processed_files.append(file)
 
 
     # Print the list of modified files
-    print(f"\nModified {len(processed_documents)} from {len(processed_files)} JSON files. This is the list of files:\n")
-    for doc in processed_documents:
-        print(doc)
+    print(f"\n{len(processed_documents)} documents were processed from {len(processed_files)} JSON files. This is the list of {len(modified_files)} modified files where {len(modified_documents)} modified documents where the term {term} was found and separated:\n")
+    for fil in modified_files:
+        print(fil)
 
 
                 

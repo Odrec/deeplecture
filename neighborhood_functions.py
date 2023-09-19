@@ -135,7 +135,7 @@ def search_save_neighborhoods(term_to_search, size=NEIGHBORHOOD_SIZE, databases=
         dicts = [neighborhoods_dictionary, indexes_term_dictionary, start_indexes_dictionary, end_indexes_dictionary]
         
         #name the file with the length of neighborhoods and the term
-        filename = Path(neighborhoods_dir,f"neighborhoods-{term_to_search}-{NEIGHBORHOOD_SIZE}.pkl")
+        filename = Path(neighborhoods_dir,f"neighborhoods-{term_to_search}-{size}.pkl")
         
         #save the file
         save_dicts_to_file(dicts, filename)
@@ -220,6 +220,13 @@ def load_neighborhoods():
             #Set variables for other cells
             term_to_search = term_of_neighborhoods
             NEIGHBORHOOD_SIZE = int(length_of_neighborhoods)
+
+            #Get amount of neighborhoods
+            amount_of_neighborhoods = 0
+            for key in neighborhoods_dictionary:
+                amount_of_neighborhoods += len(neighborhoods_dictionary[key])
+
+            print(f"Total amount of neighborhoods: {amount_of_neighborhoods}")
                     
             return neighborhoods_dictionary, indexes_term_dictionary, start_indexes_dictionary, end_indexes_dictionary, length_of_neighborhoods, term_to_search
             
