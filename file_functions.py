@@ -3,7 +3,38 @@ from files_path_variables import all_cleaned_manually_text_files, all_cleaned_co
 import json, pdb, re
 from pathlib import Path
 
-def insert_neighborhoods_into_files(neighborhoods_dict, start_indexes_dict, end_indexes_dict, databases=[all_cleaned_manually_text_files, all_cleaned_corr_text_files]):
+def modify_neighborhoods(document, neighborhoods_dict, start_indexes_dict, end_indexes_dict, text_data, processed_documents, number_of_saved_neighborhoods, modified=False):
+
+    #Go through all the neighborhoods in the document
+    for n, neighborhood in enumerate(neighborhoods_dict[document]):
+
+        #Get the start and end indexes of the neighborhood
+        start_index = start_indexes_dict[document][n]
+        end_index = end_indexes_dict[document][n]
+
+        original_neighborhood = text_data[document][start_index:end_index]
+
+        #Get the extracted neighborhood and tokenize it to add it to the original tokenized text
+        extracted_neighborhood = tokenize(neighborhoods_dict[document][n])
+
+        #Check if the original neighborhood and extracted neighborhood are different (modified)
+        if not original_neighborhood == extracted_neighborhood:
+
+            #Save this file
+            modified = True
+
+            print(f"\nReplacing neighborhood number {n} of document {document}. Number of processed documents: {len(processed_documents)}")
+            number_of_saved_neighborhoods += 1
+            print(f"Total number of changed neighborhoods: {number_of_saved_neighborhoods}")
+
+            #Replace neighborhood in the text data
+            #print("NEW",extracted_neighborhood)
+            #print("\nOLD",original_neighborhood)
+            text_data[document][n] = text_data[document][:start_index] + extracted_neighborhood + text_data[document][end_index+1:]
+
+    return text_data, modified, number_of_saved_neighborhoods
+
+def insert_neighborhoods_into_files(neighborhoods_dict, start_indexes_dict, end_indexes_dict, databases=[all_cleaned_manually_text_files, all_cleaned_corr_text_files], single_document = None):
 
     #Get the list of documents that have neighborhoods
     neighborhoods_documents_list = list(neighborhoods_dict.keys())
@@ -27,63 +58,44 @@ def insert_neighborhoods_into_files(neighborhoods_dict, start_indexes_dict, end_
             #Open a file and extract its content
             with open(file) as json_file:
                 text_data = json.loads(json_file.read())
-    
-            #Loop the documents in the file
-            for document in text_data.keys():
-    
-                #Check the document hasn't already been processed and that it has neighborhoods to check for
-                if document not in processed_documents and document in neighborhoods_documents_list:
 
-                    #Go through all the neighborhoods in the document
-                    for n, neighborhood in enumerate(neighborhoods_dict[document]):
+            #If only one document to save was provided
+            if single_document:
+                #If the document exists in the file and in the neighborhoods list then modify it
+                if single_document in text_data and single_document in neighborhoods_documents_list:
+                    print(f"\nModifying document {single_document} in file {file}.\n")
+                    text_data, modified, number_of_saved_neighborhoods = modify_neighborhoods(single_document, neighborhoods_dict, start_indexes_dict, end_indexes_dict, text_data, processed_documents, number_of_saved_neighborhoods)
+                
+            #Else process all documents
+            else:
+                #Loop the documents in the file
+                for document in text_data.keys():
+        
+                    #Check the document hasn't already been processed and that it has neighborhoods to check for
+                    if document not in processed_documents and document in neighborhoods_documents_list:
     
-                        #Get the start and end indexes of the neighborhood
-                        start_index = start_indexes_dict[document][n]
-                        end_index = end_indexes_dict[document][n]
-    
-                        original_neighborhood = text_data[document][start_index:end_index]
-    
-                        #Get the extracted neighborhood and tokenize it to add it to the original tokenized text
-                        extracted_neighborhood = tokenize(neighborhoods_dict[document][n])
-    
-                        #Check if the original neighborhood and extracted neighborhood are different (modified)
-                        if not original_neighborhood == extracted_neighborhood:
-    
-                            #Save this file
-                            modified = True
-    
-                            print(f"\nReplacing neighborhood number {n} of document {document}. Number of processed documents: {len(processed_documents)}")
-                            number_of_saved_neighborhoods += 1
-                            print(f"Total number of changed neighborhoods: {number_of_saved_neighborhoods}")
-    
-                            #Replace neighborhood in the text data
-                            #print("NEW",extracted_neighborhood)
-                            #print("\nOLD",original_neighborhood)
-                            text_data[document][n] = text_data[document][:start_index] + extracted_neighborhood + text_data[document][end_index+1:]
-    
+                        text_data, modified, number_of_saved_neighborhoods = modify_neighborhoods(document, neighborhoods_dict, start_indexes_dict, end_indexes_dict, text_data, processed_documents, number_of_saved_neighborhoods, modified)
+        
                         #Add the document as processed
                         processed_documents.append(document)
 
             #Save file if any of the documents was changed
             if modified:
-
-                #For now save in another folder to check if working fine
-                name_of_file = file.name
-                above_path = file.parent.parent
-                newly_edited_path = Path(above_path,'newly_edited')
-                # Create the directory if it doesn't exist
-                newly_edited_path.mkdir(parents=True, exist_ok=True)
-                file_path = newly_edited_path / name_of_file
                 
-                with open(file_path, "w") as json_file:
+                with open(file, "w") as json_file:
                     json.dump(text_data, json_file)
 
-                print(f"\nFile {file_path} saved succesfully!")
+                print(f"\nFile {file} saved succesfully!")
 
-                #Set variable back to False
+                #If it's a single document then stop the loop
+                if single_document: 
+                    print("\nProcessing finished.")
+                    return text_data
+
+                #Set modification variable back to False
                 modified = False
 
-                processed_files.append(name_of_file)
+                processed_files.append(file.name)
 
     print("Finished processing all files!")
 
