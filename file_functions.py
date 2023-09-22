@@ -28,9 +28,7 @@ def modify_neighborhoods(document, neighborhoods_dict, start_indexes_dict, end_i
             print(f"Total number of changed neighborhoods: {number_of_saved_neighborhoods}")
 
             #Replace neighborhood in the text data
-            #print("NEW",extracted_neighborhood)
-            #print("\nOLD",original_neighborhood)
-            text_data[document][n] = text_data[document][:start_index] + extracted_neighborhood + text_data[document][end_index+1:]
+            text_data[document] = text_data[document][:start_index] + extracted_neighborhood + text_data[document][end_index+1:]
 
     return text_data, modified, number_of_saved_neighborhoods
 
@@ -82,7 +80,7 @@ def insert_neighborhoods_into_files(neighborhoods_dict, start_indexes_dict, end_
             #Save file if any of the documents was changed
             if modified:
                 
-                with open(file, "w") as json_file:
+                with open(Path(file.parent,"../newly_edited/",file.name), "w") as json_file:
                     json.dump(text_data, json_file)
 
                 print(f"\nFile {file} saved succesfully!")
