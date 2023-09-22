@@ -80,7 +80,7 @@ def insert_neighborhoods_into_files(neighborhoods_dict, start_indexes_dict, end_
             #Save file if any of the documents was changed
             if modified:
                 
-                with open(Path(file.parent,"../newly_edited/",file.name), "w") as json_file:
+                with open(file, "w") as json_file:
                     json.dump(text_data, json_file)
 
                 print(f"\nFile {file} saved succesfully!")
